@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>浪漫三周年</title>
+    <style>
+        body {
+            background-color: black;
+            overflow: hidden;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .slideshow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-size: cover;
+            background-position: center;
+            animation: slideShow 30s infinite;
+        }
+        @keyframes slideShow {
+            0%, 33% { opacity: 1; background-image: url('0.jpeg'); }
+            34%, 67% { opacity: 1; background-image: url('i3.png'); }
+            68%, 100% { opacity: 1; background-image: url('i2.png'); }
+        
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        audio {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            width: 200px;
+        }
+        .heart {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 80px;
+            color: #ff1493;
+            text-shadow: 0 0 20px #ff69b4;
+            animation: heartbeat 1.5s infinite;
+        }
+        @keyframes heartbeat {
+            0% { transform: scale(1) translate(-50%, -50%); }
+            50% { transform: scale(1.2) translate(-50%, -50%); }
+            100% { transform: scale(1) translate(-50%, -50%); }
+        }
+        .counter {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            color: white;
+            text-shadow: 0 0 10px pink;
+        }
+    </style>
+</head>
+<body>
+    <div class="slideshow"></div>
+    <canvas id="canvas"></canvas>
+    <div class="heart">❤️</div>
+    <div class="counter" id="counter"></div>
+    <audio id="background-music" controls loop>
+        <source src="sixian.m4a" type="audio/mp4">
+        您的浏览器不支持音频播放。
+    </audio>
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const messages = [
+            "蔡安怡 我爱你", "Love conquers long distance", "三周年快乐", 
+            "谢谢你出现在我生命里", "You complete me", "你是否愿意和我一起向未来发出挑战",
+            "命运就是人与人的相遇", "那一年，花开不是最好，可是还好我遇到你"
+        ];
+
+        const messageCount = {}; 
+        const maxInstances = 3; 
+        const particles = [];
+        const fireworks = [];
+
+        class FloatingText {
+            constructor(text) {
+                this.text = text;
+                this.x = Math.random() * canvas.width;
+                this.y = canvas.height + 20;
+                this.speedY = Math.random() * 1.5 + 0.5;
+                this.opacity = Math.random() * 0.5 + 0.5;
+                this.fontSize = Math.random() * 20 + 20;
+                this.color = `rgba(255, 20, 147, ${this.opacity})`;
+
+                if (!messageCount[text]) messageCount[text] = 0;
+                messageCount[text]++;
+            }
+
+            draw() {
+                ctx.font = `${this.fontSize}px Arial`;
+                ctx.fillStyle = this.color;
+                ctx.shadowColor = "#ff1493";
+                ctx.shadowBlur = 10;
+                ctx.fillText(this.text, this.x, this.y);
+            }
+
+            update() {
+                this.y -= this.speedY;
+                if (this.y < -30) {
+                    this.remove();
+                }
+            }
+
+            remove() {
+                const index = particles.indexOf(this);
+                if (index > -1) {
+                    particles.splice(index, 1);
+                    messageCount[this.text]--;
+                }
+            }
+        }
+
+        function createParticles() {
+            if (particles.length >= messages.length * maxInstances) return;
+
+            let message;
+            do {
+                message = messages[Math.floor(Math.random() * messages.length)];
+            } while (messageCount[message] >= maxInstances);
+
+            particles.push(new FloatingText(message));
+        }
+
+        class Firework {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.exploded = false;
+                this.particles = [];
+                this.color = `hsl(${Math.random() * 360}, 100%, 70%)`;
+            }
+
+            explode() {
+                for (let i = 0; i < 30; i++) {
+                    this.particles.push(new FireworkParticle(this.x, this.y, this.color));
+                }
+                this.exploded = true;
+            }
+
+            draw() {
+                if (!this.exploded) {
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    this.particles.forEach(p => p.draw());
+                }
+            }
+
+            update() {
+                if (!this.exploded) {
+                    this.y -= 4;
+                    if (Math.random() < 0.02 || this.y < canvas.height * 0.3) {
+                        this.explode();
+                    }
+                } else {
+                    this.particles.forEach(p => p.update());
+                }
+            }
+        }
+
+        class FireworkParticle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.lifetime = 50;
+                this.speedX = (Math.random() - 0.5) * 4;
+                this.speedY = (Math.random() - 0.5) * 4;
+                this.color = color;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.lifetime--;
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((particle) => { particle.update(); particle.draw(); });
+            fireworks.forEach((firework, index) => {
+                firework.update();
+                firework.draw();
+                if (firework.exploded && firework.particles.every(p => p.lifetime <= 0)) {
+                    fireworks.splice(index, 1);
+                }
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        canvas.addEventListener("click", (event) => {
+            fireworks.push(new Firework(event.clientX, event.clientY));
+        });
+
+        setInterval(createParticles, 1000);
+        animate();
+
+        window.addEventListener("click", () => {
+            const music = document.getElementById("background-music");
+            if (music.paused) {
+                music.play().catch(err => console.error("播放失败: ", err));
+            }
+        });
+
+        function updateCounter() {
+            const startDate = new Date("2021-03-07");
+            const today = new Date();
+            const daysTogether = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+            document.getElementById("counter").innerText = `咸菜相爱 ${daysTogether} 天 ❤️`;
+        }
+        updateCounter();
+    </script>
+</body>
+</html>
